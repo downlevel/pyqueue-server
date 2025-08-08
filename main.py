@@ -44,7 +44,13 @@ async def root():
         "message": "PyQueue Server",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/api/v1/health"
+        "health": "/api/v1/health",
+        "security": {
+            "authentication": "API Key required",
+            "auth_header": "X-API-Key",
+            "user_info": "/api/v1/auth/me",
+            "permissions": "/api/v1/auth/permissions/{queue_name}"
+        }
     }
 
 @app.get("/health")

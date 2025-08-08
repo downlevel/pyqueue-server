@@ -1,0 +1,38 @@
+{
+  "pk_user1_abc123def456": {
+    "description": "User 1 - Email Service",
+    "queues": {
+      "user1_notifications": ["read", "write", "delete", "manage"],
+      "user1_emails": ["read", "write", "delete", "manage"],
+      "shared_events": ["read"]
+    }
+  },
+  "pk_user2_ghi789jkl012": {
+    "description": "User 2 - Order Processing",
+    "queues": {
+      "user2_orders": ["read", "write", "delete", "manage"],
+      "user2_payments": ["read", "write", "delete", "manage"],
+      "shared_events": ["write"]
+    }
+  },
+  "pk_service_mno345pqr678": {
+    "description": "Monitoring Service",
+    "queues": {
+      "user1_notifications": ["read"],
+      "user2_orders": ["read"],
+      "monitoring_alerts": ["read", "write", "delete", "manage"]
+    }
+  },  "pk_admin_stu901vwx234": {
+    "description": "Admin Access",
+    "queues": {
+      "*": ["read", "write", "delete", "manage"]
+    }
+  },
+  "pk_dev_12345": {
+    "description": "Development Key",
+    "queues": {
+      "test_queue": ["read", "write", "delete", "manage"],
+      "dev_queue": ["read", "write", "delete", "manage"]
+    }
+  }
+}
