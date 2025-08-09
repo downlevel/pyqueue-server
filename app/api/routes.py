@@ -6,7 +6,7 @@ from app.models.queue import (
     MessageRequest, MessageResponse, MessagesResponse, 
     QueueInfo, HealthResponse, ErrorResponse
 )
-from app.services.queue_service import queue_service
+from app.services.queue_service import get_queue_service
 from app.core.security import (
     require_queue_permission,
     QueuePermission,
@@ -32,7 +32,8 @@ async def add_message(
 ):
     """Add a message to the specified queue - requires WRITE permission"""
     try:
-        message_id = await queue_service.add_message(
+        service = get_queue_service()
+        message_id = await service.add_message(
             queue_name=queue_name,
             message_body=message_request.message,
             message_id=message_request.id
@@ -54,7 +55,8 @@ async def get_messages(
 ):
     """Get messages from the specified queue - requires READ permission"""
     try:
-        messages = await queue_service.get_messages(queue_name, max_messages)
+        service = get_queue_service()
+        messages = await service.get_messages(queue_name, max_messages)
         
         return MessagesResponse(
             messages=messages,
@@ -73,7 +75,8 @@ async def receive_messages(
 ):
     """Receive messages from the queue (SQS-style with visibility timeout) - requires READ permission"""
     try:
-        messages = await queue_service.receive_messages(
+        service = get_queue_service()
+        messages = await service.receive_messages(
             queue_name=queue_name,
             max_messages=max_messages,
             visibility_timeout=visibility_timeout
@@ -95,7 +98,8 @@ async def delete_message(
 ):
     """Delete a message using its receipt handle - requires DELETE permission"""
     try:
-        success = await queue_service.delete_message(queue_name, receipt_handle)
+        service = get_queue_service()
+        success = await service.delete_message(queue_name, receipt_handle)
         
         if not success:
             raise HTTPException(status_code=404, detail=MESSAGE_NOT_FOUND)
@@ -115,7 +119,8 @@ async def delete_message_by_id(
 ):
     """Delete a message by its ID - requires DELETE permission"""
     try:
-        success = await queue_service.delete_message_by_id(queue_name, message_id)
+        service = get_queue_service()
+        success = await service.delete_message_by_id(queue_name, message_id)
         
         if not success:
             raise HTTPException(status_code=404, detail=MESSAGE_NOT_FOUND)
@@ -136,7 +141,8 @@ async def update_message(
 ):
     """Update a message's content - requires WRITE permission"""
     try:
-        success = await queue_service.update_message(
+        service = get_queue_service()
+        success = await service.update_message(
             queue_name=queue_name,
             message_id=message_id,
             new_message_body=message_request.message
@@ -159,7 +165,8 @@ async def clear_queue(
 ):
     """Clear all messages from the specified queue - requires MANAGE permission"""
     try:
-        await queue_service.clear_queue(queue_name)
+        service = get_queue_service()
+        await service.clear_queue(queue_name)
         return {"status": "success", "message": "Queue cleared"}
     except Exception as e:
         logger.error(f"Error clearing queue {queue_name}: {e}")
@@ -172,7 +179,8 @@ async def get_queue_info(
 ):
     """Get information about the specified queue - requires READ permission"""
     try:
-        queue_info = await queue_service.get_queue_info(queue_name)
+        service = get_queue_service()
+        queue_info = await service.get_queue_info(queue_name)
         return queue_info
     except Exception as e:
         logger.error(f"Error getting queue info for {queue_name}: {e}")
@@ -185,7 +193,8 @@ async def queue_health_check(
 ):
     """Health check for a specific queue - requires READ permission"""
     try:
-        is_healthy = await queue_service.health_check(queue_name)
+        service = get_queue_service()
+        is_healthy = await service.health_check(queue_name)
         
         if not is_healthy:
             raise HTTPException(status_code=503, detail="Queue is not healthy")
@@ -210,13 +219,15 @@ async def list_queues(
         
         # If wildcard access, list all existing queues
         if "*" in api_key_config.queues:
-            all_queues = queue_service.list_queues()
+            service = get_queue_service()
+            all_queues = await service.list_queues()
             accessible_queues = all_queues
         
         queue_infos = []
         for queue_name in accessible_queues:
             try:
-                info = await queue_service.get_queue_info(queue_name)
+                service = get_queue_service()
+                info = await service.get_queue_info(queue_name)
                 queue_infos.append({
                     "queue_name": queue_name,
                     "message_count": info.message_count,
@@ -247,7 +258,8 @@ async def list_queues(
 async def global_health_check():
     """Global health check for the queue service - no authentication required"""
     try:
-        is_healthy = await queue_service.health_check()
+        service = get_queue_service()
+        is_healthy = await service.health_check()
         
         if not is_healthy:
             raise HTTPException(status_code=503, detail="Service is not healthy")
