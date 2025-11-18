@@ -35,9 +35,15 @@ async def add_message(
     logger.info(f"Message request received: {message_request.model_dump()}")
     try:
         service = get_queue_service()
+        
+        # Convert string messages to dict format for storage
+        message_body = message_request.message
+        if isinstance(message_body, str):
+            message_body = {"content": message_body}
+        
         message_id = await service.add_message(
             queue_name=queue_name,
-            message_body=message_request.message,
+            message_body=message_body,
             message_id=message_request.id
         )
         

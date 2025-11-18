@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from datetime import datetime
 from enum import Enum
 
@@ -27,7 +27,7 @@ class QueueMessage(BaseModel):
 class MessageRequest(BaseModel):
     """Request model for adding messages"""
     id: Optional[str] = Field(None, description="Optional message ID")
-    message: Dict[Any, Any] = Field(..., description="Message content")
+    message: Union[Dict[Any, Any], str] = Field(..., description="Message content (can be dict or string)")
     timestamp: Optional[str] = Field(None, description="Optional timestamp (ISO format string)")
 
 class MessageResponse(BaseModel):
