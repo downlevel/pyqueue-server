@@ -4,7 +4,10 @@ from enum import Enum
 import secrets
 import json
 import os
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 class QueuePermission(Enum):
     READ = "read"
@@ -107,13 +110,16 @@ class QueueAccess:
 
 def get_api_key_config(x_api_key: str = Header(..., description="API Key")) -> APIKeyConfig:
     """Dependency to validate and return API key configuration"""
+    logger.info(f"API Key received: {x_api_key[:20]}... (length: {len(x_api_key)})")
     config = api_key_manager.validate_api_key(x_api_key)
     if not config:
+        logger.warning(f"Invalid API key attempted: {x_api_key[:20]}...")
         raise HTTPException(
             status_code=401, 
             detail="Invalid API key",
             headers={"WWW-Authenticate": "ApiKey"}
         )
+    logger.info(f"API Key validated successfully: {config.description}")
     return config
 
 def require_queue_permission(permission: QueuePermission):
@@ -122,11 +128,14 @@ def require_queue_permission(permission: QueuePermission):
         queue_name: str,
         api_key_config: APIKeyConfig = Depends(get_api_key_config)
     ) -> QueueAccess:
+        logger.info(f"Checking {permission.value} permission for queue '{queue_name}' - API Key: {api_key_config.description}")
         if not api_key_manager.check_queue_access(api_key_config, queue_name, permission):
+            logger.warning(f"Access denied for '{api_key_config.description}' to queue '{queue_name}' - {permission.value} permission required")
             raise HTTPException(
                 status_code=403, 
                 detail=f"Access denied: {permission.value} permission required for queue '{queue_name}'"
             )
+        logger.info(f"Permission granted: {api_key_config.description} can {permission.value} queue '{queue_name}'")
         return QueueAccess(api_key_config, queue_name)
     
     return permission_checker

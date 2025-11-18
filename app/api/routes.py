@@ -31,6 +31,7 @@ async def add_message(
     queue_access: QueueAccess = Depends(require_queue_permission(QueuePermission.WRITE))
 ):
     """Add a message to the specified queue - requires WRITE permission"""
+    logger.info(f"POST /queues/{queue_name}/messages - API Key: {queue_access.api_key_config.key[:20]}... - Queue: {queue_name}")
     try:
         service = get_queue_service()
         message_id = await service.add_message(
