@@ -33,7 +33,7 @@ async def test_server():
         print(f"   Response: {response.json()}")        # Test adding a message
         print("\n2. Adding Message...")
         message_data = {
-            "message": {
+            "message_body": {
                 "content": "Hello, PyQueue!",
                 "timestamp": datetime.now().isoformat(),
                 "type": "test"

@@ -27,7 +27,7 @@ class QueueMessage(BaseModel):
 class MessageRequest(BaseModel):
     """Request model for adding messages"""
     id: Optional[str] = Field(None, description="Optional message ID")
-    message: Union[Dict[Any, Any], str] = Field(..., description="Message content (can be dict or string)")
+    message_body: Union[Dict[Any, Any], str] = Field(..., description="Message content (can be dict or string)")
     timestamp: Optional[str] = Field(None, description="Optional timestamp (ISO format string)")
 
 class MessageResponse(BaseModel):

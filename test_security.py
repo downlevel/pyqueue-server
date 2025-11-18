@@ -78,7 +78,7 @@ async def test_queue_permissions():
         response = await client.post(
             f"{BASE_URL}/api/v1/queues/user1_notifications/messages",
             headers={"X-API-Key": API_KEYS["user1"]},
-            json={"message": {"content": "Hello from User1", "timestamp": datetime.now().isoformat()}}
+            json={"message_body": {"content": "Hello from User1", "timestamp": datetime.now().isoformat()}}
         )
         if response.status_code == 200:
             print("   ✅ User1 can write to own queue")
@@ -90,7 +90,7 @@ async def test_queue_permissions():
         response = await client.post(
             f"{BASE_URL}/api/v1/queues/user2_orders/messages",
             headers={"X-API-Key": API_KEYS["user1"]},
-            json={"message": {"content": "Unauthorized access attempt"}}
+            json={"message_body": {"content": "Unauthorized access attempt"}}
         )
         if response.status_code == 403:
             print("   ✅ User1 correctly denied access to User2's queue")
@@ -102,7 +102,7 @@ async def test_queue_permissions():
         response = await client.post(
             f"{BASE_URL}/api/v1/queues/user2_orders/messages",
             headers={"X-API-Key": API_KEYS["user2"]},
-            json={"message": {"order_id": "12345", "status": "pending"}}
+            json={"message_body": {"order_id": "12345", "status": "pending"}}
         )
         if response.status_code == 200:
             print("   ✅ User2 can write to own queue")
@@ -125,7 +125,7 @@ async def test_queue_permissions():
         response = await client.post(
             f"{BASE_URL}/api/v1/queues/shared_events/messages",
             headers={"X-API-Key": API_KEYS["user2"]},
-            json={"message": {"event": "user_signup", "timestamp": datetime.now().isoformat()}}
+            json={"message_body": {"event": "user_signup", "timestamp": datetime.now().isoformat()}}
         )
         if response.status_code == 200:
             print("   ✅ User2 can write to shared queue")
@@ -146,7 +146,7 @@ async def test_admin_access():
             response = await client.post(
                 f"{BASE_URL}/api/v1/queues/{queue_name}/messages",
                 headers={"X-API-Key": API_KEYS["admin"]},
-                json={"message": {"admin_message": "Admin can access any queue"}}
+                json={"message_body": {"admin_message": "Admin can access any queue"}}
             )
             if response.status_code == 200:
                 print(f"   ✅ Admin can write to {queue_name}")
@@ -173,7 +173,7 @@ async def test_service_account():
         response = await client.post(
             f"{BASE_URL}/api/v1/queues/user1_notifications/messages",
             headers={"X-API-Key": API_KEYS["service"]},
-            json={"message": {"should_fail": "true"}}
+            json={"message_body": {"should_fail": "true"}}
         )
         if response.status_code == 403:
             print("   ✅ Service account correctly denied write access")

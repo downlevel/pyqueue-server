@@ -37,7 +37,7 @@ async def add_message(
         service = get_queue_service()
         
         # Convert string messages to dict format for storage
-        message_body = message_request.message
+        message_body = message_request.message_body
         if isinstance(message_body, str):
             message_body = {"content": message_body}
         
@@ -150,10 +150,16 @@ async def update_message(
     """Update a message's content - requires WRITE permission"""
     try:
         service = get_queue_service()
+        
+        # Convert string messages to dict format for storage
+        message_body = message_request.message_body
+        if isinstance(message_body, str):
+            message_body = {"content": message_body}
+        
         success = await service.update_message(
             queue_name=queue_name,
             message_id=message_id,
-            new_message_body=message_request.message
+            new_message_body=message_body
         )
         
         if not success:
