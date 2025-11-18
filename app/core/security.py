@@ -33,64 +33,20 @@ class APIKeyManager:
     
     def _load_api_keys(self):
         """Load API keys from configuration"""
-        # Default configuration for demonstration
-        # In production, load from secure configuration file or environment variables
-        api_keys_config = {
-            # User 1 - Email Service
-            "pk_user1_abc123def456": {
-                "description": "User 1 - Email Service",
-                "queues": {
-                    "user1_notifications": ["read", "write", "delete", "manage"],
-                    "user1_emails": ["read", "write", "delete", "manage"],
-                    "shared_events": ["read"]  # Read-only access to shared queue
-                }
-            },
-            # User 2 - Order Processing
-            "pk_user2_ghi789jkl012": {
-                "description": "User 2 - Order Processing",
-                "queues": {
-                    "user2_orders": ["read", "write", "delete", "manage"],
-                    "user2_payments": ["read", "write", "delete", "manage"],
-                    "shared_events": ["write"]  # Write-only access to shared queue
-                }
-            },
-            # Service account - Limited access
-            "pk_service_mno345pqr678": {
-                "description": "Monitoring Service",
-                "queues": {
-                    "user1_notifications": ["read"],
-                    "user2_orders": ["read"],
-                    "monitoring_alerts": ["read", "write", "delete", "manage"]
-                }
-            },
-            # Admin key - Full access to all queues (use with caution)
-            "pk_admin_stu901vwx234": {
-                "description": "Admin Access",
-                "queues": {
-                    "*": ["read", "write", "delete", "manage"]  # Wildcard for all queues
-                }
-            },
-            # Development key (for testing)
-            "pk_dev_12345": {
-                "description": "Development Key",
-                "queues": {
-                    "test_queue": ["read", "write", "delete", "manage"],
-                    "dev_queue": ["read", "write", "delete", "manage"]
-                }
-            }
-        }
+        api_keys_config = {}
         
-        # Try to load from external config file if it exists
+        # Load from config file
         config_file = Path("config/api_keys.json")
         if config_file.exists():
             try:
                 with open(config_file, 'r') as f:
-                    external_config = json.load(f)
-                    api_keys_config.update(external_config)
+                    api_keys_config = json.load(f)
             except Exception as e:
                 print(f"Warning: Could not load API keys from {config_file}: {e}")
+        else:
+            print(f"Warning: Config file {config_file} not found")
         
-        # Load from environment variable if set
+        # Load from environment variable if set (overrides config file)
         env_config = os.getenv("PYQUEUE_API_KEYS_JSON")
         if env_config:
             try:
