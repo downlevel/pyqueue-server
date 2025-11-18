@@ -28,7 +28,7 @@ class MessageRequest(BaseModel):
     """Request model for adding messages"""
     id: Optional[str] = Field(None, description="Optional message ID")
     message: Dict[Any, Any] = Field(..., description="Message content")
-    timestamp: Optional[datetime] = Field(None, description="Optional timestamp")
+    timestamp: Optional[str] = Field(None, description="Optional timestamp (ISO format string)")
 
 class MessageResponse(BaseModel):
     """Response model for message operations"""

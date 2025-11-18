@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Path, Depends
+from fastapi import APIRouter, HTTPException, Query, Path, Depends, Request
 from typing import List, Optional
 import logging
 
@@ -32,6 +32,7 @@ async def add_message(
 ):
     """Add a message to the specified queue - requires WRITE permission"""
     logger.info(f"POST /queues/{queue_name}/messages - API Key: {queue_access.api_key_config.key[:20]}... - Queue: {queue_name}")
+    logger.info(f"Message request received: {message_request.model_dump()}")
     try:
         service = get_queue_service()
         message_id = await service.add_message(
