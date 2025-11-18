@@ -27,14 +27,13 @@ async def test_api_key_authentication():
     async with httpx.AsyncClient() as client:
         # Test 1: No API key
         print("1. Testing without API key...")
-        try:
-            response = await client.get(f"{BASE_URL}/api/v1/queues")
+        response = await client.get(f"{BASE_URL}/api/v1/queues")
+        if response.status_code == 422:
+            print("   ✅ Correctly rejected - missing API key header")
+        elif response.status_code == 200:
             print(f"   ❌ Unexpected success: {response.status_code}")
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 422:
-                print("   ✅ Correctly rejected - missing API key header")
-            else:
-                print(f"   ❓ Unexpected error: {e.response.status_code}")
+        else:
+            print(f"   ❓ Unexpected error: {response.status_code}")
         
         # Test 2: Invalid API key
         print("\n2. Testing with invalid API key...")
