@@ -5,9 +5,17 @@ Tests API key authentication and authorization
 import asyncio
 import httpx
 import json
+import os
 from datetime import datetime
+from dotenv import load_dotenv
 
-BASE_URL = "http://localhost:8000"
+# Load environment variables
+load_dotenv()
+
+# Get host and port from environment variables
+HOST = os.getenv("HOST", "localhost")
+PORT = os.getenv("PORT", "8000")
+BASE_URL = f"http://{HOST}:{PORT}"
 
 # Test API keys from configuration
 API_KEYS = {

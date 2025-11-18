@@ -2,13 +2,20 @@
 Simple test script for PyQueue Server
 """
 import asyncio
+import os
 import httpx
 import json
 from datetime import datetime
+from dotenv import load_dotenv
 
-BASE_URL = "http://localhost:8000"
-QUEUE_NAME = "test_queue"
-API_KEY = "pk_dev_12345"  # Development API key
+# Load environment variables
+load_dotenv()
+HOST = os.getenv("HOST", "localhost")
+PORT = os.getenv("PORT", "8000")
+BASE_URL = f"http://{HOST}:{PORT}"
+
+QUEUE_NAME = os.getenv("QUEUE_NAME_TEST", "test_queue")  # Development queue name
+API_KEY = os.getenv("API_KEY_TEST", "pk_dev_12345")  # Development API key
 
 async def test_server():
     """Test the PyQueue server functionality"""
