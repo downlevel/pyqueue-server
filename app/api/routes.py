@@ -67,7 +67,7 @@ async def get_messages(
         service = get_queue_service()
         messages, total = await service.get_messages(queue_name, limit=limit, offset=offset)
         
-        return MessagesResponse(
+        response = MessagesResponse(
             messages=messages,
             count=len(messages),
             total=total,
@@ -75,6 +75,8 @@ async def get_messages(
             limit=limit,
             has_more=(offset + len(messages)) < total
         )
+        logger.debug("Messages response payload: %s", response.model_dump())
+        return response
     except Exception as e:
         logger.error(f"Error getting messages from queue {queue_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -95,7 +97,7 @@ async def receive_messages(
             visibility_timeout=visibility_timeout
         )
         
-        return MessagesResponse(
+        response = MessagesResponse(
             messages=messages,
             count=len(messages),
             total=len(messages),
@@ -103,6 +105,8 @@ async def receive_messages(
             limit=max_messages,
             has_more=len(messages) == max_messages
         )
+        logger.debug("Receive messages response payload: %s", response.model_dump())
+        return response
     except Exception as e:
         logger.error(f"Error receiving messages from queue {queue_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
