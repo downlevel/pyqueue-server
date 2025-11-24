@@ -97,7 +97,11 @@ async def receive_messages(
         
         return MessagesResponse(
             messages=messages,
-            count=len(messages)
+            count=len(messages),
+            total=len(messages),
+            offset=0,
+            limit=max_messages,
+            has_more=len(messages) == max_messages
         )
     except Exception as e:
         logger.error(f"Error receiving messages from queue {queue_name}: {e}")
