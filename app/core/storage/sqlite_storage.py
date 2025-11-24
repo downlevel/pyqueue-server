@@ -3,7 +3,7 @@ import json
 import time
 import uuid
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime, timedelta
 import aiosqlite
 import asyncio
@@ -98,16 +98,27 @@ class SQLiteStorage(StorageBackend):
                     "status": "available"
                 }
     
-    async def get_messages(self, queue_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_messages(self, queue_name: str, limit: int = 10, offset: int = 0) -> Tuple[List[Dict[str, Any]], int]:
         """Get messages from queue (non-destructive read)"""
+        if offset < 0:
+            offset = 0
         async with aiosqlite.connect(self.db_path) as db:
+            count_cursor = await db.execute("""
+                SELECT COUNT(*)
+                FROM messages
+                WHERE queue_name = ?
+            """, (queue_name,))
+            total_row = await count_cursor.fetchone()
+            total = total_row[0] if total_row else 0
+            await count_cursor.close()
+
             cursor = await db.execute("""
                 SELECT id, message_body, attributes, timestamp, status, receive_count
                 FROM messages 
                 WHERE queue_name = ? 
                 ORDER BY timestamp ASC
-                LIMIT ?
-            """, (queue_name, limit))
+                LIMIT ? OFFSET ?
+            """, (queue_name, limit, offset))
             
             rows = await cursor.fetchall()
             messages = []
@@ -122,7 +133,8 @@ class SQLiteStorage(StorageBackend):
                     "receive_count": row[5]
                 })
             
-            return messages
+            await cursor.close()
+            return messages, total
     
     async def receive_messages(self, queue_name: str, max_messages: int, visibility_timeout: int) -> List[Dict[str, Any]]:
         """Receive messages with SQS-style visibility timeout"""

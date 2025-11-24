@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timezone
 
 from app.models.queue import QueueMessage, MessageStatus, QueueInfo
@@ -40,10 +40,11 @@ class QueueService:
         result = await self.storage.add_message(queue_name, message_data)
         return result.get("message_id") or result.get("id")
     
-    async def get_messages(self, queue_name: str, max_messages: int = 10) -> List[QueueMessage]:
-        """Get messages from the queue (without making them invisible)"""
-        messages_data = await self.storage.get_messages(queue_name, max_messages)
-        return [self._convert_to_queue_message(msg_data) for msg_data in messages_data]
+    async def get_messages(self, queue_name: str, limit: int = 10, offset: int = 0) -> Tuple[List[QueueMessage], int]:
+        """Get messages from the queue (without making them invisible) with pagination support"""
+        messages_data, total = await self.storage.get_messages(queue_name, limit, offset)
+        messages = [self._convert_to_queue_message(msg_data) for msg_data in messages_data]
+        return messages, total
     
     async def receive_messages(self, queue_name: str, max_messages: int = 10, visibility_timeout: int = 30) -> List[QueueMessage]:
         """Receive messages (SQS-style with visibility timeout)"""

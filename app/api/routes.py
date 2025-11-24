@@ -58,17 +58,22 @@ async def add_message(
 @router.get("/queues/{queue_name}/messages", response_model=MessagesResponse)
 async def get_messages(
     queue_name: str = Path(..., description=QUEUE_NAME_DESC),
-    max_messages: int = Query(10, ge=1, le=100, description="Maximum number of messages to return"),
+    limit: int = Query(10, ge=1, le=100, description="Maximum number of messages to return"),
+    offset: int = Query(0, ge=0, description="Number of messages to skip"),
     queue_access: QueueAccess = Depends(require_queue_permission(QueuePermission.READ))
 ):
-    """Get messages from the specified queue - requires READ permission"""
+    """Get messages from the specified queue with pagination - requires READ permission"""
     try:
         service = get_queue_service()
-        messages = await service.get_messages(queue_name, max_messages)
+        messages, total = await service.get_messages(queue_name, limit=limit, offset=offset)
         
         return MessagesResponse(
             messages=messages,
-            count=len(messages)
+            count=len(messages),
+            total=total,
+            offset=offset,
+            limit=limit,
+            has_more=(offset + len(messages)) < total
         )
     except Exception as e:
         logger.error(f"Error getting messages from queue {queue_name}: {e}")

@@ -3,7 +3,7 @@ import os
 import uuid
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 import aiofiles
 import logging
@@ -129,7 +129,7 @@ class JSONStorage(StorageBackend):
             logger.info(f"Added message {message_id} to queue {queue_name}")
             return new_message
     
-    async def get_messages(self, queue_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_messages(self, queue_name: str, limit: int = 10, offset: int = 0) -> Tuple[List[Dict[str, Any]], int]:
         """Get messages from queue (non-destructive read)"""
         async with self._get_lock(queue_name):
             messages = await self._load_queue(queue_name)
@@ -140,7 +140,11 @@ class JSONStorage(StorageBackend):
                 if msg.get('status') == 'available'
             ]
             
-            return available_messages[:limit]
+            if offset < 0:
+                offset = 0
+            start = min(offset, len(available_messages))
+            end = start + limit if limit is not None else None
+            return available_messages[start:end], len(available_messages)
     
     async def receive_messages(self, queue_name: str, max_messages: int, visibility_timeout: int) -> List[Dict[str, Any]]:
         """Receive messages with SQS-style visibility timeout"""

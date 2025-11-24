@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import asyncio
 
 class StorageBackend(ABC):
@@ -19,8 +19,8 @@ class StorageBackend(ABC):
         pass
     
     @abstractmethod
-    async def get_messages(self, queue_name: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get messages from queue (non-destructive read)"""
+    async def get_messages(self, queue_name: str, limit: int = 10, offset: int = 0) -> Tuple[List[Dict[str, Any]], int]:
+        """Get messages from queue (non-destructive read) and total count for pagination"""
         pass
     
     @abstractmethod

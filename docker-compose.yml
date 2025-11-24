@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # PyQueue Server - Backend API
+  pyqueue-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pyqueue-server
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-sqlite}
+      - STORAGE_PATH=/app/data
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CORS_ORIGINS=*
+    volumes:
+      - pyqueue-data:/app/data
+      - ./config:/app/config
+    networks:
+      - pyqueue-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  pyqueue-data:
+    driver: local
+
+networks:
+  pyqueue-network:
+    driver: bridge

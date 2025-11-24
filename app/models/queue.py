@@ -40,6 +40,10 @@ class MessagesResponse(BaseModel):
     """Response model for getting multiple messages"""
     messages: List[QueueMessage] = Field(..., description="List of messages")
     count: int = Field(..., description="Number of messages returned")
+    total: Optional[int] = Field(None, description="Total number of messages available")
+    offset: Optional[int] = Field(None, description="Current pagination offset")
+    limit: Optional[int] = Field(None, description="Page size used for retrieval")
+    has_more: Optional[bool] = Field(None, description="Whether more messages are available after this page")
 
 class QueueInfo(BaseModel):
     """Queue information model"""
