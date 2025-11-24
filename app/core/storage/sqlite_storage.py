@@ -142,12 +142,12 @@ class SQLiteStorage(StorageBackend):
         max_messages: int,
         visibility_timeout: int,
         consumer_id: Optional[str] = None,
-        remove_after_receive: bool = False
+        remove_after_receive: bool = False,
+        only_new: bool = False
     ) -> List[Dict[str, Any]]:
         """Receive messages with visibility timeout and optional consumer filtering"""
         async with self.lock:
-        remove_after_receive: bool = False,
-        only_new: bool = False
+            async with aiosqlite.connect(self.db_path) as db:
                 now = datetime.now().isoformat()
                 
                 # First, make expired messages available again
@@ -167,7 +167,6 @@ class SQLiteStorage(StorageBackend):
                 """, (queue_name,))
                 
                 rows = await cursor.fetchall()
-                await cursor.close()
                 messages: List[Dict[str, Any]] = []
                 
                 if rows:
@@ -200,7 +199,7 @@ class SQLiteStorage(StorageBackend):
                         if remove_after_receive:
                             await db.execute(
                                 "DELETE FROM messages WHERE id = ?",
-                        new_receive_count = current_receive_count + 1
+                                new_receive_count = current_receive_count + 1
                             )
                             status_value = 'processed'
                             receipt_handle = None
