@@ -86,6 +86,9 @@ async def receive_messages(
     queue_name: str = Path(..., description=QUEUE_NAME_DESC),
     max_messages: int = Query(10, ge=1, le=100, description="Maximum number of messages to return"),
     visibility_timeout: int = Query(30, ge=1, le=43200, description="Visibility timeout in seconds"),
+    consumer_id: Optional[str] = Query(None, min_length=1, description="Identifier for the consumer requesting messages"),
+    delete_after_receive: bool = Query(False, description="When true, remove messages from the queue immediately after receipt"),
+    only_new: bool = Query(False, description="When true, return only messages that have never been delivered"),
     queue_access: QueueAccess = Depends(require_queue_permission(QueuePermission.READ))
 ):
     """Receive messages from the queue (SQS-style with visibility timeout) - requires READ permission"""
@@ -94,7 +97,10 @@ async def receive_messages(
         messages = await service.receive_messages(
             queue_name=queue_name,
             max_messages=max_messages,
-            visibility_timeout=visibility_timeout
+            visibility_timeout=visibility_timeout,
+            consumer_id=consumer_id,
+            remove_after_receive=delete_after_receive,
+            only_new=only_new
         )
         
         response = MessagesResponse(

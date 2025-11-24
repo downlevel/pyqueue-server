@@ -146,14 +146,23 @@ class JSONStorage(StorageBackend):
             end = start + limit if limit is not None else None
             return available_messages[start:end], len(available_messages)
     
-    async def receive_messages(self, queue_name: str, max_messages: int, visibility_timeout: int) -> List[Dict[str, Any]]:
-        """Receive messages with SQS-style visibility timeout"""
+    async def receive_messages(
+        self,
+        queue_name: str,
+        max_messages: int,
+        visibility_timeout: int,
+        consumer_id: Optional[str] = None,
+        remove_after_receive: bool = False,
+        only_new: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Receive messages with visibility timeout and optional consumer filtering"""
         async with self._get_lock(queue_name):
             messages = await self._load_queue(queue_name)
             
             now = datetime.now(timezone.utc)
             visibility_until = (now + timedelta(seconds=visibility_timeout)).isoformat()
             received_messages = []
+            delete_indices: List[int] = []
             
             # First, make expired messages available again
             for msg in messages:
@@ -172,20 +181,48 @@ class JSONStorage(StorageBackend):
                         msg['receipt_handle'] = None
             
             # Find available messages
-            for msg in messages:
-                if (msg.get('status') == 'available' and 
-                    len(received_messages) < max_messages):
-                    
-                    # Mark as in-flight
-                    msg['status'] = 'in_flight'
-                    msg['visibility_timeout_until'] = visibility_until
-                    msg['receipt_handle'] = self._generate_receipt_handle()
-                    msg['receive_count'] = msg.get('receive_count', 0) + 1
-                    
-                    received_messages.append(msg.copy())
-            
-            if received_messages:
-                await self._save_queue(queue_name, messages)
+                for idx, msg in enumerate(messages):
+                    if msg.get('status') != 'available':
+                        continue
+                    if len(received_messages) >= max_messages:
+                        break
+
+                    current_receive_count = msg.get('receive_count', 0)
+                    if only_new and current_receive_count > 0:
+                        continue
+
+                    history = msg.get('delivery_history', [])
+                    if not isinstance(history, list):
+                        history = []
+
+                    if consumer_id and consumer_id in history:
+                        continue
+
+                    if consumer_id:
+                        history.append(consumer_id)
+                        msg['delivery_history'] = history
+
+                    msg['receive_count'] = current_receive_count + 1
+
+                    if remove_after_receive:
+                        msg_copy = msg.copy()
+                        msg_copy['status'] = 'processed'
+                        msg_copy['visibility_timeout_until'] = None
+                        msg_copy['receipt_handle'] = None
+                        received_messages.append(msg_copy)
+                        delete_indices.append(idx)
+                    else:
+                        msg['status'] = 'in_flight'
+                        msg['visibility_timeout_until'] = visibility_until
+                        msg['receipt_handle'] = self._generate_receipt_handle()
+                        received_messages.append(msg.copy())
+
+                if delete_indices:
+                    for i in sorted(delete_indices, reverse=True):
+                        messages.pop(i)
+
+                if received_messages or delete_indices:
+                    await self._save_queue(queue_name, messages)
             
             return received_messages
     

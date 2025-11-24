@@ -24,8 +24,16 @@ class StorageBackend(ABC):
         pass
     
     @abstractmethod
-    async def receive_messages(self, queue_name: str, max_messages: int, visibility_timeout: int) -> List[Dict[str, Any]]:
-        """Receive messages with SQS-style visibility timeout"""
+    async def receive_messages(
+        self,
+        queue_name: str,
+        max_messages: int,
+        visibility_timeout: int,
+        consumer_id: Optional[str] = None,
+        remove_after_receive: bool = False,
+        only_new: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Receive messages with visibility timeout, optional consumer filtering, and auto-removal"""
         pass
     
     @abstractmethod

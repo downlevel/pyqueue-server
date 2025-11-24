@@ -46,9 +46,24 @@ class QueueService:
         messages = [self._convert_to_queue_message(msg_data) for msg_data in messages_data]
         return messages, total
     
-    async def receive_messages(self, queue_name: str, max_messages: int = 10, visibility_timeout: int = 30) -> List[QueueMessage]:
-        """Receive messages (SQS-style with visibility timeout)"""
-        messages_data = await self.storage.receive_messages(queue_name, max_messages, visibility_timeout)
+    async def receive_messages(
+        self,
+        queue_name: str,
+        max_messages: int = 10,
+        visibility_timeout: int = 30,
+        consumer_id: Optional[str] = None,
+        remove_after_receive: bool = False,
+        only_new: bool = False
+    ) -> List[QueueMessage]:
+        """Receive messages with optional consumer filtering, auto removal, and new-message filtering"""
+        messages_data = await self.storage.receive_messages(
+            queue_name,
+            max_messages,
+            visibility_timeout,
+            consumer_id=consumer_id,
+            remove_after_receive=remove_after_receive,
+            only_new=only_new
+        )
         return [self._convert_to_queue_message(msg_data) for msg_data in messages_data]
     
     async def delete_message(self, queue_name: str, receipt_handle: str) -> bool:

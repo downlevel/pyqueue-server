@@ -136,10 +136,18 @@ class SQLiteStorage(StorageBackend):
             await cursor.close()
             return messages, total
     
-    async def receive_messages(self, queue_name: str, max_messages: int, visibility_timeout: int) -> List[Dict[str, Any]]:
-        """Receive messages with SQS-style visibility timeout"""
+    async def receive_messages(
+        self,
+        queue_name: str,
+        max_messages: int,
+        visibility_timeout: int,
+        consumer_id: Optional[str] = None,
+        remove_after_receive: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Receive messages with visibility timeout and optional consumer filtering"""
         async with self.lock:
-            async with aiosqlite.connect(self.db_path) as db:
+        remove_after_receive: bool = False,
+        only_new: bool = False
                 now = datetime.now().isoformat()
                 
                 # First, make expired messages available again
@@ -156,37 +164,70 @@ class SQLiteStorage(StorageBackend):
                     FROM messages 
                     WHERE queue_name = ? AND status = 'available'
                     ORDER BY timestamp ASC
-                    LIMIT ?
-                """, (queue_name, max_messages))
+                """, (queue_name,))
                 
                 rows = await cursor.fetchall()
-                messages = []
+                await cursor.close()
+                messages: List[Dict[str, Any]] = []
                 
                 if rows:
                     visibility_until = (datetime.now() + timedelta(seconds=visibility_timeout)).isoformat()
                     
                     for row in rows:
+                        if len(messages) >= max_messages:
+                            break
+
                         message_id = row[0]
-                        receipt_handle = str(uuid.uuid4())
+                        body = json.loads(row[1])
+                        attributes = json.loads(row[2]) if row[2] else {}
+                        history = attributes.get("delivery_history", [])
+                        if not isinstance(history, list):
+                            history = []
+
+                        current_receive_count = row[4]
+
+                        if only_new and current_receive_count > 0:
+                            continue
+                        if consumer_id and consumer_id in history:
+                            continue
+
+                        if consumer_id:
+                            history.append(consumer_id)
+                            attributes["delivery_history"] = history
+
                         new_receive_count = row[4] + 1
-                        
-                        # Update message status
-                        await db.execute("""
-                            UPDATE messages 
-                            SET status = 'in_flight', 
-                                visibility_timeout_until = ?,
-                                receipt_handle = ?,
-                                receive_count = ?
-                            WHERE id = ?
-                        """, (visibility_until, receipt_handle, new_receive_count, message_id))
+
+                        if remove_after_receive:
+                            await db.execute(
+                                "DELETE FROM messages WHERE id = ?",
+                        new_receive_count = current_receive_count + 1
+                            )
+                            status_value = 'processed'
+                            receipt_handle = None
+                            visibility_value = None
+                        else:
+                            receipt_handle = str(uuid.uuid4())
+                            await db.execute("""
+                                UPDATE messages 
+                                SET status = 'in_flight', 
+                                    visibility_timeout_until = ?,
+                                    receipt_handle = ?,
+                                    receive_count = ?,
+                                    attributes = ?
+                                WHERE id = ?
+                            """, (visibility_until, receipt_handle, new_receive_count, json.dumps(attributes), message_id))
+                            status_value = 'in_flight'
+                            visibility_value = visibility_until
                         
                         messages.append({
                             "message_id": message_id,
-                            "message_body": json.loads(row[1]),
-                            "attributes": json.loads(row[2]),
+                            "message_body": body,
+                            "attributes": attributes,
                             "timestamp": row[3],
                             "receipt_handle": receipt_handle,
-                            "receive_count": new_receive_count
+                            "receive_count": new_receive_count,
+                            "status": status_value,
+                            "visibility_timeout_until": visibility_value
                         })
                 
                 await db.commit()
