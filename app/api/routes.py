@@ -4,7 +4,7 @@ import logging
 
 from app.models.queue import (
     MessageRequest, MessageResponse, MessagesResponse, 
-    QueueInfo, HealthResponse, ErrorResponse
+    QueueInfo, HealthResponse, ErrorResponse, QueueMessage
 )
 from app.services.queue_service import get_queue_service
 from app.core.security import (
@@ -160,7 +160,7 @@ async def delete_message_by_id(
         raise HTTPException(status_code=500, detail=str(e))
 
 #get message by id
-@router.get("/queues/{queue_name}/message/{message_id}", response_model=MessageResponse)
+@router.get("/queues/{queue_name}/message/{message_id}", response_model=QueueMessage)
 async def get_message_by_id(
     queue_name: str = Path(..., description=QUEUE_NAME_DESC),
     message_id: str = Path(..., description="ID of the message to retrieve"),
