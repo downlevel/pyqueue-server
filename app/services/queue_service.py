@@ -88,6 +88,16 @@ class QueueService:
         if msg_data:
             return self._convert_to_queue_message(msg_data)
         return None
+    
+    async def check_messages_existence(self, queue_name: str, message_ids: List[str]) -> List[str]:
+        """Check which messages from the list exist in the queue"""
+        # Optimized implementation could rely on storage backend specific method
+        # For now, we iterate, but it happens locally on the server (fast)
+        existing_ids = []
+        for msg_id in message_ids:
+            if await self.storage.get_message(queue_name, msg_id):
+                existing_ids.append(msg_id)
+        return existing_ids
 
     async def get_queue_info(self, queue_name: str) -> QueueInfo:
         """Get information about the queue"""
@@ -192,7 +202,6 @@ def get_queue_service() -> QueueService:
     if _queue_service is None:
         raise RuntimeError("Queue service not initialized. Call initialize_queue_service() first.")
     return _queue_service
-
 
 # Legacy compatibility - for backwards compatibility during transition
 queue_service = None  # Will be set by initialize_queue_service

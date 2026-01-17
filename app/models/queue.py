@@ -66,3 +66,12 @@ class ErrorResponse(BaseModel):
     error: str = Field(..., description="Error message")
     detail: Optional[str] = Field(None, description="Detailed error information")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+
+# ...existing code...
+class CheckExistenceRequest(BaseModel):
+    """Request model for checking message existence"""
+    message_ids: List[str] = Field(..., description="List of message IDs to check")
+
+class CheckExistenceResponse(BaseModel):
+    """Response model for existence check"""
+    existing_ids: List[str] = Field(..., description="List of IDs that were found in the queue")

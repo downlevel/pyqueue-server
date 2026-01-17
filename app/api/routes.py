@@ -4,7 +4,8 @@ import logging
 
 from app.models.queue import (
     MessageRequest, MessageResponse, MessagesResponse, 
-    QueueInfo, HealthResponse, ErrorResponse, QueueMessage
+    QueueInfo, HealthResponse, ErrorResponse, QueueMessage,
+    CheckExistenceRequest, CheckExistenceResponse
 )
 from app.services.queue_service import get_queue_service
 from app.core.security import (
@@ -181,6 +182,24 @@ async def get_message_by_id(
         logger.error(f"Error getting message from queue {queue_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/queues/{queue_name}/messages/check-existence", response_model=CheckExistenceResponse)
+async def check_messages_existence(
+    queue_name: str = Path(..., description=QUEUE_NAME_DESC),
+    check_request: CheckExistenceRequest = ...,
+    queue_access: QueueAccess = Depends(require_queue_permission(QueuePermission.READ))
+):
+    """Check which message IDs exist in the queue - requires READ permission"""
+    try:
+        service = get_queue_service()
+        existing_ids = await service.check_messages_existence(
+            queue_name=queue_name,
+            message_ids=check_request.message_ids
+        )
+        return CheckExistenceResponse(existing_ids=existing_ids)
+    except Exception as e:
+        logger.error(f"Error checking messages existence in {queue_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @router.put("/queues/{queue_name}/messages/by-id/{message_id}")
 async def update_message(
     queue_name: str = Path(..., description=QUEUE_NAME_DESC),
