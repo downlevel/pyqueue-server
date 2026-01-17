@@ -77,7 +77,22 @@ async def test_server():
         queues = response.json()
         print(f"   Found {queues['count']} queues: {queues['queues']}")
         
-        print("\n✅ All tests completed!")
+        # Test getting a specific message by ID (if any messages exist)
+        if messages['count'] > 0:
+            test_message_id = messages['messages'][0]['id']
+            print(f"\n7. Getting Message by ID: {test_message_id}...")
+            response = await client.get(
+                f"{BASE_URL}/api/v1/queues/{QUEUE_NAME}/messages/{test_message_id}",
+                headers=headers
+            )
+            print(f"   Status: {response.status_code}")
+            message_by_id = response.json()
+            print(f"   Message ID: {message_by_id.get('id')}")
+            print(f"   Message Body: {message_by_id.get('message_body')}")
+        else:
+            print("\n7. No messages available to test get_message_by_id.")
 
+        print("\n✅ All tests completed!")
+      
 if __name__ == "__main__":
     asyncio.run(test_server())
