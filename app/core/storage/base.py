@@ -50,7 +50,12 @@ class StorageBackend(ABC):
     async def update_message(self, queue_name: str, message_id: str, new_message_body: Dict[str, Any]) -> bool:
         """Update message data"""
         pass
-    
+
+    @abstractmethod
+    async def get_message_by_id(self, queue_name: str, message_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific message by its ID"""
+        pass
+
     @abstractmethod
     async def clear_queue(self, queue_name: str) -> int:
         """Clear all messages from queue, return count of deleted messages"""

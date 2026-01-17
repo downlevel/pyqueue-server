@@ -82,6 +82,13 @@ class QueueService:
         """Clear all messages from the queue"""
         return await self.storage.clear_queue(queue_name)
     
+    async def get_message_by_id(self, queue_name: str, message_id: str) -> Optional[QueueMessage]:
+        """Get a specific message by its ID"""
+        msg_data = await self.storage.get_message_by_id(queue_name, message_id)
+        if msg_data:
+            return self._convert_to_queue_message(msg_data)
+        return None
+
     async def get_queue_info(self, queue_name: str) -> QueueInfo:
         """Get information about the queue"""
         info_data = await self.storage.get_queue_info(queue_name)

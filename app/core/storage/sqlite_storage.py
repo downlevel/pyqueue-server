@@ -256,6 +256,30 @@ class SQLiteStorage(StorageBackend):
                 await db.commit()
                 return cursor.rowcount > 0
     
+    async def get_message_by_id(self, queue_name: str, message_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific message by its ID"""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("""
+                SELECT id, message_body, attributes, timestamp, status, receive_count
+                FROM messages 
+                WHERE queue_name = ? AND id = ?
+            """, (queue_name, message_id))
+            
+            row = await cursor.fetchone()
+            await cursor.close()
+            
+            if row:
+                return {
+                    "message_id": row[0],
+                    "message_body": json.loads(row[1]),
+                    "attributes": json.loads(row[2]),
+                    "timestamp": row[3],
+                    "status": row[4],
+                    "receive_count": row[5]
+                }
+            return None
+
+
     async def update_message(self, queue_name: str, message_id: str, new_message_body: Dict[str, Any]) -> bool:
         """Update message data"""
         async with self.lock:
