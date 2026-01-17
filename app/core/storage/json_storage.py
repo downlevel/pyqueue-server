@@ -272,6 +272,18 @@ class JSONStorage(StorageBackend):
             
             return False
     
+    async def get_message_by_id(self, queue_name: str, message_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific message by its ID"""
+        async with self._get_lock(queue_name):
+            messages = await self._load_queue(queue_name)
+            
+            # Find message with matching ID
+            for msg in messages:
+                if msg.get('id') == message_id or msg.get('message_id') == message_id:
+                    return msg.copy()
+            
+            return None
+
     async def clear_queue(self, queue_name: str) -> int:
         """Clear all messages from queue, return count of deleted messages"""
         async with self._get_lock(queue_name):
