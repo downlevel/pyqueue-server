@@ -95,7 +95,7 @@ class QueueService:
         # For now, we iterate, but it happens locally on the server (fast)
         existing_ids = []
         for msg_id in message_ids:
-            if await self.storage.get_message(queue_name, msg_id):
+            if await self.storage.get_message_by_id(queue_name, msg_id):
                 existing_ids.append(msg_id)
         return existing_ids
 
