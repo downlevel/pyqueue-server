@@ -82,7 +82,7 @@ async def test_server():
             test_message_id = messages['messages'][0]['id']
             print(f"\n7. Getting Message by ID: {test_message_id}...")
             response = await client.get(
-                f"{BASE_URL}/api/v1/queues/{QUEUE_NAME}/messages/{test_message_id}",
+                f"{BASE_URL}/api/v1/queues/{QUEUE_NAME}/message/{test_message_id}",
                 headers=headers
             )
             print(f"   Status: {response.status_code}")

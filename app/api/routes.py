@@ -159,6 +159,28 @@ async def delete_message_by_id(
         logger.error(f"Error deleting message from queue {queue_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+#get message by id
+@router.get("/queues/{queue_name}/message/{message_id}", response_model=MessageResponse)
+async def get_message_by_id(
+    queue_name: str = Path(..., description=QUEUE_NAME_DESC),
+    message_id: str = Path(..., description="ID of the message to retrieve"),
+    queue_access: QueueAccess = Depends(require_queue_permission(QueuePermission.READ))
+):
+    """Get a message by its ID - requires READ permission"""
+    try:
+        service = get_queue_service()
+        message = await service.get_message_by_id(queue_name, message_id)
+        
+        if not message:
+            raise HTTPException(status_code=404, detail=MESSAGE_NOT_FOUND)
+        
+        return message
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting message from queue {queue_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.put("/queues/{queue_name}/messages/by-id/{message_id}")
 async def update_message(
     queue_name: str = Path(..., description=QUEUE_NAME_DESC),
