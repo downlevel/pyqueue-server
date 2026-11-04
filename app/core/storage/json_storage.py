@@ -84,8 +84,16 @@ class JSONStorage(StorageBackend):
                         msg_copy[field] = msg_copy[field].isoformat()
                 serializable_messages.append(msg_copy)
             
-            async with aiofiles.open(queue_file, 'w') as f:
+            # Write to a temporary file and rename it over the queue file: opening the
+            # queue file with 'w' truncates it first, so a process stopped mid-write
+            # left an empty queue behind. os.replace is atomic on the same filesystem.
+            # The ".json.tmp" name stays out of list_queues(), which globs "*.json".
+            tmp_file = queue_file.with_name(queue_file.name + ".tmp")
+            async with aiofiles.open(tmp_file, 'w') as f:
                 await f.write(json.dumps(serializable_messages, indent=2, default=str))
+                await f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_file, queue_file)
         except Exception as e:
             logger.error(f"Error saving queue {queue_name}: {e}")
             raise
