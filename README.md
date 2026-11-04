@@ -2,6 +2,11 @@
 
 A FastAPI-based queue server that provides REST API endpoints for message queuing operations, compatible with the PyQueue client library. Features configurable storage backends for flexibility and performance.
 
+**When to use it:** you want SQS-style semantics (visibility timeouts, receipt handles, at-least-once
+delivery) on your own server, without running Redis, RabbitMQ or an AWS account. It fits small
+services, background jobs and homelab automation; for very high throughput or complex routing,
+a dedicated broker is a better choice.
+
 ## Features
 
 - **RESTful API** for queue operations with comprehensive security
@@ -574,6 +579,16 @@ Monitor these endpoints for production deployment:
 - **Optimized Queries**: Indexed database operations for fast lookups
 - **Connection Pooling**: Efficient database connection management
 - **Background Processing**: Non-blocking I/O operations
+
+## PyQueue ecosystem
+
+| Project | What it is |
+|---|---|
+| [pyqueue-server](https://github.com/downlevel/pyqueue-server) | Self-hosted queue server with an AWS SQS-style REST API (FastAPI, SQLite or JSON) |
+| [pyqueue_client](https://github.com/downlevel/pyqueue_client) | Python client library (`pip install pyqueue-client`) for a local JSON queue or a remote server |
+| [pyqueue-ui](https://github.com/downlevel/pyqueue-ui) | Web dashboard to browse queues and messages |
+| [pynotiq](https://github.com/downlevel/pynotiq) | Worker that delivers queue messages as Telegram notifications |
+| [keystorebot](https://github.com/downlevel/keystorebot) | Telegram bot that stores key-value pairs in a PyQueue queue |
 
 ## License
 
