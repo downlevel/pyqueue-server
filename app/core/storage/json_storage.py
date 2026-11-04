@@ -181,48 +181,48 @@ class JSONStorage(StorageBackend):
                         msg['receipt_handle'] = None
             
             # Find available messages
-                for idx, msg in enumerate(messages):
-                    if msg.get('status') != 'available':
-                        continue
-                    if len(received_messages) >= max_messages:
-                        break
+            for idx, msg in enumerate(messages):
+                if msg.get('status') != 'available':
+                    continue
+                if len(received_messages) >= max_messages:
+                    break
 
-                    current_receive_count = msg.get('receive_count', 0)
-                    if only_new and current_receive_count > 0:
-                        continue
+                current_receive_count = msg.get('receive_count', 0)
+                if only_new and current_receive_count > 0:
+                    continue
 
-                    history = msg.get('delivery_history', [])
-                    if not isinstance(history, list):
-                        history = []
+                history = msg.get('delivery_history', [])
+                if not isinstance(history, list):
+                    history = []
 
-                    if consumer_id and consumer_id in history:
-                        continue
+                if consumer_id and consumer_id in history:
+                    continue
 
-                    if consumer_id:
-                        history.append(consumer_id)
-                        msg['delivery_history'] = history
+                if consumer_id:
+                    history.append(consumer_id)
+                    msg['delivery_history'] = history
 
-                    msg['receive_count'] = current_receive_count + 1
+                msg['receive_count'] = current_receive_count + 1
 
-                    if remove_after_receive:
-                        msg_copy = msg.copy()
-                        msg_copy['status'] = 'processed'
-                        msg_copy['visibility_timeout_until'] = None
-                        msg_copy['receipt_handle'] = None
-                        received_messages.append(msg_copy)
-                        delete_indices.append(idx)
-                    else:
-                        msg['status'] = 'in_flight'
-                        msg['visibility_timeout_until'] = visibility_until
-                        msg['receipt_handle'] = self._generate_receipt_handle()
-                        received_messages.append(msg.copy())
+                if remove_after_receive:
+                    msg_copy = msg.copy()
+                    msg_copy['status'] = 'processed'
+                    msg_copy['visibility_timeout_until'] = None
+                    msg_copy['receipt_handle'] = None
+                    received_messages.append(msg_copy)
+                    delete_indices.append(idx)
+                else:
+                    msg['status'] = 'in_flight'
+                    msg['visibility_timeout_until'] = visibility_until
+                    msg['receipt_handle'] = self._generate_receipt_handle()
+                    received_messages.append(msg.copy())
 
-                if delete_indices:
-                    for i in sorted(delete_indices, reverse=True):
-                        messages.pop(i)
+            if delete_indices:
+                for i in sorted(delete_indices, reverse=True):
+                    messages.pop(i)
 
-                if received_messages or delete_indices:
-                    await self._save_queue(queue_name, messages)
+            if received_messages or delete_indices:
+                await self._save_queue(queue_name, messages)
             
             return received_messages
     
