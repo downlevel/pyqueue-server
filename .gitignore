@@ -137,3 +137,5 @@ Thumbs.db
 
 #copilot
 .github/
+# Local API keys (start from config/api_keys.example.json)
+config/api_keys.json

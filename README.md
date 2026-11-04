@@ -84,7 +84,14 @@ No code changes required - the server automatically uses the configured backend!
 
 3. **Set up API keys (Required for v1.0+):**
    
-   Create `config/api_keys.json` with your API keys:
+   Copy the example and replace its keys with your own (`config/api_keys.json` is not tracked
+   by git, so your keys stay out of the repository):
+   ```bash
+   cp config/api_keys.example.json config/api_keys.json
+   ```
+
+   Use long random strings as keys, e.g. `python -c "import secrets; print('pk_' + secrets.token_urlsafe(24))"`.
+   A minimal file looks like this:
    ```json
    {
      "your-api-key-here": {
@@ -148,10 +155,10 @@ docker-compose up --build
 
 # Or build and run manually
 docker build -t pyqueue-server .
-docker run -p 8000:8000 pyqueue-server
+docker run -p 8002:8002 -v $(pwd)/config:/app/config pyqueue-server
 ```
 
-The server will start on `http://localhost:8000`
+The server will start on `http://localhost:8000` (Docker image and Docker Compose: port `8002`)
 
 **API Documentation:** Visit `http://localhost:8000/docs` for interactive API documentation
 
@@ -271,7 +278,7 @@ API_V1_PREFIX=/api/v1       # API endpoint prefix
 
 ### API Key Configuration
 
-Create `config/api_keys.json`:
+Create `config/api_keys.json` (start from `config/api_keys.example.json`):
 
 ```json
 {
@@ -320,7 +327,8 @@ pyqueue-server/
 ├── test_security.py          # Security system tests
 ├── test_storage_backends.py  # Storage backend tests
 ├── config/
-│   └── api_keys.json         # API key configuration
+│   ├── api_keys.example.json # Example API key configuration
+│   └── api_keys.json         # Your API keys (not tracked by git)
 ├── data/                     # Queue data storage
 │   ├── *.json               # JSON queue files (if using JSON backend)
 │   └── pyqueue.db           # SQLite database (if using SQLite backend)
@@ -492,13 +500,13 @@ docker-compose down
 docker build -t pyqueue-server .
 
 # Run with JSON storage
-docker run -p 8000:8000 \
+docker run -p 8002:8002 \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/config:/app/config \
   pyqueue-server
 
 # Run with SQLite storage
-docker run -p 8000:8000 \
+docker run -p 8002:8002 \
   -e STORAGE_BACKEND=sqlite \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/config:/app/config \
@@ -514,11 +522,11 @@ services:
   pyqueue-server:
     build: .
     ports:
-      - "8000:8000"
+      - "8002:8002"
     environment:
       - STORAGE_BACKEND=sqlite
       - HOST=0.0.0.0
-      - PORT=8000
+      - PORT=8002
       - DEBUG=false
       - LOG_LEVEL=INFO
     volumes:
